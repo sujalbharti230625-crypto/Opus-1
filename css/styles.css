@@ -1,0 +1,151 @@
+/* ETH/USDT Confluence Desk — custom styles */
+
+:root {
+  --bg: #0a0e1a;
+  --panel: #0f1525;
+  --panel2: #141b2e;
+  --border: #1f2940;
+  --muted: #6b7591;
+  --text: #e6ebf5;
+  --accent: #00d4ff;
+  --bull: #26d782;
+  --bear: #ef4767;
+  --warn: #f6b94d;
+}
+
+html, body { height: 100%; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,212,255,0.06), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(38,215,130,0.05), transparent 60%),
+    var(--bg);
+}
+
+/* Timeframe tabs */
+.tf-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tf-btn:hover { color: var(--text); background: var(--panel2); }
+.tf-btn.active {
+  color: var(--text);
+  background: var(--panel2);
+  border-color: var(--border);
+}
+
+/* Card */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.card-head h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
+.card-body { padding: 10px 14px; }
+.card-body .row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.card-body .row span:first-child { color: var(--muted); }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+
+/* Badges */
+.badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--panel2);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.badge.bull { background: rgba(38,215,130,0.12); color: var(--bull); }
+.badge.bear { background: rgba(239,71,103,0.12); color: var(--bear); }
+.badge.warn { background: rgba(246,185,77,0.12); color: var(--warn); }
+.badge.info { background: rgba(0,212,255,0.12); color: var(--accent); }
+
+/* MTF rows */
+#mtfBody tr { border-top: 1px solid var(--border); }
+#mtfBody td { padding: 8px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+/* Signal direction colors via JS-applied classes */
+.dir-long { color: var(--bull); }
+.dir-short { color: var(--bear); }
+.dir-neutral { color: var(--muted); }
+
+/* Reasons list dots */
+#sig-reasons li::before {
+  content: '•';
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+/* Connection dot states */
+.conn-on { background: var(--bull) !important; box-shadow: 0 0 8px rgba(38,215,130,0.6); }
+.conn-off { background: var(--bear) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3654; }
+
+/* Chart tooltips inherit dark style */
+.tv-lightweight-charts { font-family: 'Inter', sans-serif; }
+
+
+/* Backtest UI */
+.form-input {
+  width: 100%;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 4px;
+  font-family: inherit;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+
+.card-stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.card-stat .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-stat .val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', ui-monospace, monospace; margin-top: 4px; }
+
+#tradesBody tr { border-top: 1px solid var(--border); }
+#tradesBody td { padding: 6px 8px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+#tradesBody tr:hover { background: var(--panel2); }
+.win-row td:nth-child(10) { color: var(--bull); }
+.loss-row td:nth-child(10) { color: var(--bear); }
+
+/* Header link to backtest from main */
+.bt-link {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--panel2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+}
+.bt-link:hover { color: var(--text); border-color: var(--accent); }

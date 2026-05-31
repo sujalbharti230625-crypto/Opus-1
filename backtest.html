@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ETH/USDT Backtest Lab</title>
+  <meta name="description" content="2-year historical backtest for ETH/USDT confluence signals with variable R:R." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0a0e1a', panel: '#0f1525', panel2: '#141b2e', border: '#1f2940',
+            muted: '#6b7591', text: '#e6ebf5',
+            accent: '#00d4ff', bull: '#26d782', bear: '#ef4767', warn: '#f6b94d',
+          },
+          fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono: ['JetBrains Mono','ui-monospace','monospace'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-bg text-text font-sans min-h-screen">
+
+  <header class="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-warn flex items-center justify-center font-bold text-bg">B</div>
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">Backtest Lab</h1>
+          <p class="text-xs text-muted leading-tight">Historical ETH/USDT confluence-signal simulation · variable R:R · partial fills</p>
+        </div>
+      </div>
+      <a href="index.html" class="text-xs px-3 py-2 rounded bg-panel2 hover:bg-border text-muted hover:text-text">← Live Desk</a>
+    </div>
+  </header>
+
+  <main class="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-12 gap-4">
+
+    <!-- Config panel -->
+    <aside class="col-span-12 lg:col-span-3">
+      <div class="bg-panel border border-border rounded-xl overflow-hidden sticky top-20">
+        <div class="px-4 py-3 border-b border-border">
+          <h3 class="font-semibold">Configuration</h3>
+        </div>
+        <form id="cfgForm" class="p-4 space-y-3 text-sm">
+
+          <div>
+            <label class="text-xs text-muted">Lookback</label>
+            <select id="cfg-lookback" class="form-input">
+              <option value="6m">6 months</option>
+              <option value="1y">1 year</option>
+              <option value="2y" selected>2 years</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Primary timeframe</label>
+            <select id="cfg-tf" class="form-input">
+              <option value="1h" selected>1 hour</option>
+              <option value="4h">4 hour</option>
+              <option value="1d">1 day</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Min signal score</label>
+            <select id="cfg-minScore" class="form-input">
+              <option value="30">Low+ (30)</option>
+              <option value="45" selected>Medium+ (45)</option>
+              <option value="60">High+ (60)</option>
+            </select>
+            <p class="text-[10px] text-muted mt-1">Calibrated 2026-05: max realistic score ≈ 65</p>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Fees (bps round-trip)</label>
+            <select id="cfg-fees" class="form-input">
+              <option value="0">0 — no fees</option>
+              <option value="10" selected>10 — 0.05% per side (Binance VIP)</option>
+              <option value="20">20 — 0.10% per side (retail taker)</option>
+              <option value="40">40 — 0.20% per side (high)</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="flex items-center gap-2 cursor-pointer text-xs">
+              <input id="cfg-htfAlign" type="checkbox" checked class="accent-accent" />
+              <span>Require HTF alignment</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-xs">
+              <input id="cfg-minRR" type="checkbox" class="accent-accent" />
+              <span>Require TP1 R:R ≥ 1.0</span>
+            </label>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">SL management after TP1</label>
+            <select id="cfg-beMode" class="form-input">
+              <option value="be" selected>Move SL to breakeven</option>
+              <option value="small">Small lock (entry − 0.25R)</option>
+              <option value="none">Keep original SL</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Risk per trade (% of equity)</label>
+            <select id="cfg-risk" class="form-input">
+              <option value="0.5">0.5%</option>
+              <option value="1" selected>1%</option>
+              <option value="2">2%</option>
+              <option value="3">3%</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Starting equity ($)</label>
+            <input id="cfg-equity" type="number" value="10000" min="1000" class="form-input" />
+          </div>
+
+          <div>
+            <label class="text-xs text-muted">Partial exits (TP1 / TP2 / TP3 %)</label>
+            <div class="flex gap-2">
+              <input id="cfg-p1" type="number" value="25" min="0" max="100" class="form-input flex-1" />
+              <input id="cfg-p2" type="number" value="35" min="0" max="100" class="form-input flex-1" />
+              <input id="cfg-p3" type="number" value="40" min="0" max="100" class="form-input flex-1" />
+            </div>
+            <p class="text-[10px] text-muted mt-1">Calibrated default 25/35/40 (runner-favored). SL → breakeven after TP1 · SL → TP1 after TP2</p>
+          </div>
+
+          <button id="runBtn" type="button"
+            class="w-full bg-accent text-bg font-semibold rounded py-2 hover:bg-accent/90 transition mt-2">
+            Run Backtest
+          </button>
+
+          <div id="progressWrap" class="hidden pt-2">
+            <div class="h-2 bg-panel2 rounded overflow-hidden">
+              <div id="progressBar" class="h-full bg-accent transition-all" style="width:0%"></div>
+            </div>
+            <div id="progressText" class="text-xs text-muted mt-1">starting…</div>
+          </div>
+
+          <div class="text-[11px] text-muted leading-relaxed pt-2 border-t border-border">
+            Backtest uses identical signal logic as the live desk.<br/>
+            <strong class="text-warn">Honest disclosure:</strong> walk-forward validation on 2y ETH/USDT (4h) shows in-sample/out-of-sample drift — the strategy is regime-sensitive. Past performance does not predict future results.
+          </div>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Results -->
+    <section class="col-span-12 lg:col-span-9 space-y-4">
+
+      <!-- Summary cards -->
+      <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card-stat"><div class="lbl">Net P&L</div><div id="s-netpnl" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Win Rate</div><div id="s-winrate" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Profit Factor</div><div id="s-pf" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Max Drawdown</div><div id="s-dd" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Total Trades</div><div id="s-trades" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Avg R Multiple</div><div id="s-avgr" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Final Equity</div><div id="s-equity" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Expectancy / trade</div><div id="s-exp" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Fees Paid</div><div id="s-fees" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">P&L Before Fees</div><div id="s-grossPnl" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Avg Score</div><div id="s-avgScore" class="val">—</div></div>
+        <div class="card-stat"><div class="lbl">Avg Bars Held</div><div id="s-avgBars" class="val">—</div></div>
+      </div>
+
+      <!-- Equity curve -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 class="font-semibold">Equity Curve</h3>
+          <div id="eqRange" class="text-xs text-muted">—</div>
+        </div>
+        <div id="eqChart" style="height: 320px;"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- TP hit rates -->
+        <div class="card">
+          <div class="card-head"><h3>Target Hit Rates</h3></div>
+          <div class="card-body text-sm">
+            <div class="row"><span>TP1 hit</span><span id="hit-tp1" class="mono">—</span></div>
+            <div class="row"><span>TP2 hit</span><span id="hit-tp2" class="mono">—</span></div>
+            <div class="row"><span>TP3 hit</span><span id="hit-tp3" class="mono">—</span></div>
+          </div>
+        </div>
+        <!-- By direction -->
+        <div class="card">
+          <div class="card-head"><h3>By Direction</h3></div>
+          <div class="card-body text-sm">
+            <div class="row"><span>LONG (n / WR / P&L)</span><span id="dir-long" class="mono">—</span></div>
+            <div class="row"><span>SHORT (n / WR / P&L)</span><span id="dir-short" class="mono">—</span></div>
+          </div>
+        </div>
+        <!-- By strength -->
+        <div class="card">
+          <div class="card-head"><h3>By Signal Strength</h3></div>
+          <div class="card-body text-sm">
+            <div class="row"><span>Low</span><span id="str-low" class="mono">—</span></div>
+            <div class="row"><span>Medium</span><span id="str-medium" class="mono">—</span></div>
+            <div class="row"><span>High</span><span id="str-high" class="mono">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Funnel -->
+      <div class="card">
+        <div class="card-head"><h3>Signal Funnel</h3></div>
+        <div class="card-body text-sm">
+          <div class="row"><span>Bars analyzed</span><span id="f-considered" class="mono">—</span></div>
+          <div class="row"><span>Rejected (NEUTRAL)</span><span id="f-rejN" class="mono">—</span></div>
+          <div class="row"><span>Rejected (below score)</span><span id="f-rejS" class="mono">—</span></div>
+          <div class="row"><span>Trades taken</span><span id="f-taken" class="mono">—</span></div>
+        </div>
+      </div>
+
+      <!-- Trade list -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 class="font-semibold">Trades</h3>
+          <div class="flex items-center gap-2 text-xs">
+            <select id="tradeFilter" class="form-input py-1 px-2 text-xs">
+              <option value="all">All</option>
+              <option value="win">Wins only</option>
+              <option value="loss">Losses only</option>
+              <option value="long">Longs</option>
+              <option value="short">Shorts</option>
+            </select>
+            <span id="tradeCount" class="text-muted">—</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto max-h-[480px] overflow-y-auto">
+          <table class="w-full text-xs">
+            <thead class="bg-panel2 sticky top-0 text-muted">
+              <tr>
+                <th class="text-left p-2">#</th>
+                <th class="text-left p-2">Open</th>
+                <th class="text-left p-2">Dir</th>
+                <th class="text-right p-2">Entry</th>
+                <th class="text-right p-2">SL</th>
+                <th class="text-right p-2">TP1/2/3</th>
+                <th class="text-right p-2">Exit</th>
+                <th class="text-left p-2">Reason</th>
+                <th class="text-left p-2">Strength</th>
+                <th class="text-right p-2">P&L $</th>
+                <th class="text-right p-2">R</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="max-w-[1600px] mx-auto px-4 py-6 text-xs text-muted text-center border-t border-border mt-4">
+    Backtest uses Binance public klines · Pure client-side simulation · For research only.
+  </footer>
+
+  <script type="module" src="js/backtest-ui.js"></script>
+</body>
+</html>
