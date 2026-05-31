@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ETH/USDT Confluence Signals — Pro Trading Desk</title>
+  <meta name="description" content="Professional ETH/USDT trade signals built on market structure, supply & demand, liquidity, momentum, Fibonacci, Elliott Wave and Wyckoff confluence." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg:       '#0a0e1a',
+            panel:    '#0f1525',
+            panel2:   '#141b2e',
+            border:   '#1f2940',
+            muted:    '#6b7591',
+            text:     '#e6ebf5',
+            accent:   '#00d4ff',
+            bull:     '#26d782',
+            bear:     '#ef4767',
+            warn:     '#f6b94d',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-bg text-text font-sans min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-bull flex items-center justify-center font-bold text-bg">Ξ</div>
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">ETH/USDT Confluence Desk</h1>
+          <p class="text-xs text-muted leading-tight">Market Structure · Supply/Demand · Liquidity · Momentum · Fib · Elliott · Wyckoff</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="backtest.html" class="bt-link">Backtest Lab →</a>
+        <div id="livePrice" class="font-mono text-right">
+          <div class="text-xs text-muted">ETH/USDT</div>
+          <div class="text-lg font-semibold flex items-center gap-2">
+            <span id="priceValue">—</span>
+            <span id="priceChange" class="text-xs font-medium px-2 py-0.5 rounded bg-panel2 text-muted">—</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <span id="connDot" class="w-2 h-2 rounded-full bg-muted"></span>
+          <span id="connText" class="text-xs text-muted">connecting…</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main grid -->
+  <main class="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-12 gap-4">
+
+    <!-- Left: chart + analysis -->
+    <section class="col-span-12 lg:col-span-8 flex flex-col gap-4">
+
+      <!-- Timeframe + chart -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2 border-b border-border">
+          <div class="flex items-center gap-1" id="tfTabs">
+            <button data-tf="15m" class="tf-btn">15m</button>
+            <button data-tf="1h" class="tf-btn active">1h</button>
+            <button data-tf="4h" class="tf-btn">4h</button>
+            <button data-tf="1d" class="tf-btn">1D</button>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="tg-zones" checked class="accent-accent" /> Zones</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="tg-liquidity" checked class="accent-accent" /> Liquidity</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="tg-fib" checked class="accent-accent" /> Fib</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="tg-swings" checked class="accent-accent" /> Swings</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="tg-signal" checked class="accent-accent" /> Signal</label>
+          </div>
+        </div>
+        <div id="chart" class="w-full" style="height: 520px;"></div>
+      </div>
+
+      <!-- Analysis grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Market Structure</h3>
+            <span id="ms-trend" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="ms-body">
+            <div class="row"><span>Trend</span><span id="ms-trendLabel" class="mono">—</span></div>
+            <div class="row"><span>Last event</span><span id="ms-event" class="mono">—</span></div>
+            <div class="row"><span>Last swing high</span><span id="ms-shigh" class="mono">—</span></div>
+            <div class="row"><span>Last swing low</span><span id="ms-slow" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Supply &amp; Demand</h3>
+            <span id="sd-count" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="sd-body">
+            <div class="row"><span>Nearest demand</span><span id="sd-demand" class="mono">—</span></div>
+            <div class="row"><span>Nearest supply</span><span id="sd-supply" class="mono">—</span></div>
+            <div class="row"><span>Active zone</span><span id="sd-active" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Liquidity Heatmap</h3>
+            <span id="lq-count" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="lq-body">
+            <div class="row"><span>Buy-side liquidity</span><span id="lq-bsl" class="mono">—</span></div>
+            <div class="row"><span>Sell-side liquidity</span><span id="lq-ssl" class="mono">—</span></div>
+            <div class="row"><span>Equal highs/lows</span><span id="lq-eq" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Candle &amp; Momentum</h3>
+            <span id="mo-strength" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="mo-body">
+            <div class="row"><span>Last pattern</span><span id="mo-pattern" class="mono">—</span></div>
+            <div class="row"><span>Body/Range</span><span id="mo-br" class="mono">—</span></div>
+            <div class="row"><span>RSI(14)</span><span id="mo-rsi" class="mono">—</span></div>
+            <div class="row"><span>ATR(14)</span><span id="mo-atr" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Fibonacci</h3>
+            <span id="fib-dir" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="fib-body">
+            <div class="row"><span>Swing</span><span id="fib-swing" class="mono">—</span></div>
+            <div class="row"><span>Golden Pocket</span><span id="fib-gp" class="mono">—</span></div>
+            <div class="row"><span>0.5 retrace</span><span id="fib-50" class="mono">—</span></div>
+            <div class="row"><span>1.618 ext</span><span id="fib-ext" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Elliott Wave</h3>
+            <span id="ew-phase" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="ew-body">
+            <div class="row"><span>Pattern</span><span id="ew-pattern" class="mono">—</span></div>
+            <div class="row"><span>Wave count</span><span id="ew-count" class="mono">—</span></div>
+            <div class="row"><span>Validity</span><span id="ew-valid" class="mono">—</span></div>
+          </div>
+        </div>
+
+        <div class="card md:col-span-2">
+          <div class="card-head">
+            <h3>Wyckoff Phase</h3>
+            <span id="wy-phase" class="badge">—</span>
+          </div>
+          <div class="card-body text-sm" id="wy-body">
+            <div class="row"><span>Phase</span><span id="wy-phaseLabel" class="mono">—</span></div>
+            <div class="row"><span>Range</span><span id="wy-range" class="mono">—</span></div>
+            <div class="row"><span>Volume bias</span><span id="wy-vol" class="mono">—</span></div>
+            <div class="row"><span>Event</span><span id="wy-event" class="mono">—</span></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right: signal panel + MTF -->
+    <aside class="col-span-12 lg:col-span-4 flex flex-col gap-4">
+
+      <!-- Signal -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 class="font-semibold">Active Signal</h3>
+          <span id="sig-strength" class="text-xs px-2 py-1 rounded bg-panel2 text-muted">—</span>
+        </div>
+        <div class="p-4 space-y-3" id="signalPanel">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-muted">Direction</span>
+            <span id="sig-dir" class="text-2xl font-bold">—</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">Entry</div>
+              <div id="sig-entry" class="font-mono font-semibold">—</div>
+            </div>
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">Stop Loss</div>
+              <div id="sig-sl" class="font-mono font-semibold text-bear">—</div>
+            </div>
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">Target 1</div>
+              <div id="sig-tp1" class="font-mono font-semibold text-bull">—</div>
+            </div>
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">Target 2</div>
+              <div id="sig-tp2" class="font-mono font-semibold text-bull">—</div>
+            </div>
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">Target 3</div>
+              <div id="sig-tp3" class="font-mono font-semibold text-bull">—</div>
+            </div>
+            <div class="bg-panel2 rounded-lg p-3">
+              <div class="text-xs text-muted">R:R (TP1)</div>
+              <div id="sig-rr" class="font-mono font-semibold">—</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-muted mb-1">Confluence Score</div>
+            <div class="h-2 bg-panel2 rounded overflow-hidden">
+              <div id="sig-bar" class="h-full bg-gradient-to-r from-warn via-accent to-bull" style="width:0%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-muted mt-1"><span id="sig-score">0</span><span>/100</span></div>
+          </div>
+          <div>
+            <div class="text-xs text-muted mb-1">Reasoning</div>
+            <ul id="sig-reasons" class="text-xs space-y-1"></ul>
+          </div>
+          <div class="text-[11px] text-muted leading-relaxed pt-2 border-t border-border">
+            Signals are derived algorithmically from public price data. <strong class="text-warn">Not financial advice.</strong> Markets are volatile — always size positions to your own risk and verify with your own analysis.
+          </div>
+        </div>
+      </div>
+
+      <!-- MTF -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 class="font-semibold">Multi-Timeframe Confluence</h3>
+          <span id="mtf-bias" class="text-xs px-2 py-1 rounded bg-panel2">—</span>
+        </div>
+        <div class="p-2">
+          <table class="w-full text-xs">
+            <thead class="text-muted">
+              <tr>
+                <th class="text-left p-2">TF</th>
+                <th class="text-left p-2">Trend</th>
+                <th class="text-left p-2">Momentum</th>
+                <th class="text-left p-2">Wyckoff</th>
+                <th class="text-right p-2">Bias</th>
+              </tr>
+            </thead>
+            <tbody id="mtfBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent signals log -->
+      <div class="bg-panel border border-border rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 class="font-semibold">Signal History</h3>
+          <button id="clearLog" class="text-xs text-muted hover:text-text">clear</button>
+        </div>
+        <div id="signalLog" class="max-h-60 overflow-y-auto divide-y divide-border text-xs">
+          <div class="p-3 text-muted">No signals yet.</div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer class="max-w-[1600px] mx-auto px-4 py-6 text-xs text-muted text-center border-t border-border mt-4">
+    Built with public Binance market data · lightweight-charts · Pure client-side analysis · Educational use only.
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
